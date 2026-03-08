@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Страна Дробей 🍕</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --purple:#7c3aed;
+  --pink:#ec4899;
+  --yellow:#f59e0b;
+  --green:#10b981;
+  --orange:#f97316;
+  --blue:#3b82f6;
+  --bg:#0a0a1a;
+  --card:#111128;
+  --card2:#181836;
+}
+
+body{
+  font-family:'Segoe UI',Tahoma,sans-serif;
+  background:var(--bg);
+  color:#e8e8f8;
+  min-height:100vh;
+  overflow-x:hidden;
+  user-select:none;
+}
+
+/* ── STARS BG ── */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ── SCREENS ── */
+.screen{
+  position:relative;z-index:1;
+  display:none;min-height:100vh;
+  flex-direction:column;align-items:center;
+  padding:24px 16px;
+  animation:fadeIn .35s ease;
+}
+.screen.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══════════════════════════════════════
+   START SCREEN
+══════════════════════════════════════ */
+#screen-start{justify-content:center;gap:28px;text-align:center}
+
+.hero-emoji{
+  font-size:5.5em;
+  display:inline-block;
+  animation:float 2.5s ease-in-out infinite alternate;
+  filter:drop-shadow(0 0 30px rgba(124,58,237,.6));
+}
+@keyframes float{from{transform:translateY(0) rotate(-3deg)}to{transform:translateY(-18px) rotate(3deg)}}
+
+.hero-title{
+  font-size:clamp(2.4em,8vw,4em);
+  font-weight:900;
+  background:linear-gradient(135deg,#a78bfa,#f472b6,#fbbf24);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  line-height:1.1;
+}
+.hero-sub{font-size:1.1em;color:#8080aa;margin-top:6px}
+
+.start-stats{
+  display:flex;gap:24px;justify-content:center;flex-wrap:wrap;
+}
+.stat-chip{
+  background:var(--card2);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:50px;
+  padding:10px 22px;
+  font-size:.95em;
+  display:flex;align-items:center;gap:8px;
+}
+.stat-chip span{color:#a78bfa;font-weight:700;font-size:1.2em}
+
+/* ── XP BAR ── */
+.xp-bar-wrap{
+  width:100%;max-width:380px;
+  background:rgba(255,255,255,.08);
+  border-radius:50px;height:14px;overflow:hidden;
+}
+.xp-bar-fill{
+  height:100%;
+  background:linear-gradient(90deg,#fbbf24,#f97316);
+  border-radius:50px;
+  transition:width 1.2s cubic-bezier(.34,1.56,.64,1);
+}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:15px 38px;border:none;border-radius:50px;
+  font-size:1.15em;font-weight:700;cursor:pointer;
+  transition:transform .18s,box-shadow .18s;
+  text-decoration:none;
+}
+.btn:hover:not(:disabled){transform:translateY(-3px)}
+.btn:active:not(:disabled){transform:translateY(0)}
+
+.btn-primary{
+  background:linear-gradient(135deg,#7c3aed,#a78bfa);
+  color:#fff;
+  box-shadow:0 4px 28px rgba(124,58,237,.45);
+}
+.btn-primary:hover{box-shadow:0 8px 40px rgba(124,58,237,.65)}
+
+.btn-success{
+  background:linear-gradient(135deg,#10b981,#34d399);
+  color:#fff;
+  box-shadow:0 4px 28px rgba(16,185,129,.4);
+}
+.btn-ghost{
+  background:rgba(255,255,255,.08);
+  border:2px solid rgba(255,255,255,.15);
+  color:#e8e8f8;
+}
+.btn-ghost:hover{background:rgba(255,255,255,.14)}
+
+/* ══════════════════════════════════════
+   MAP SCREEN
+══════════════════════════════════════ */
+#screen-map{gap:22px}
+
+.map-header{text-align:center}
+.map-title{font-size:2em;font-weight:800;color:#c4b5fd}
+.map-sub{color:#6666aa;margin-top:4px}
+
+.map-total-stars{
+  display:flex;align-items:center;gap:10px;
+  background:var(--card2);
+  border-radius:50px;padding:10px 24px;
+  font-size:1em;font-weight:600;
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.level-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(145px,1fr));
+  gap:16px;width:100%;max-width:680px;
+}
+
+.level-card{
+  background:var(--card);
+  border:2px solid rgba(255,255,255,.07);
+  border-radius:22px;padding:24px 14px;
+  text-align:center;cursor:pointer;
+  transition:transform .25s,box-shadow .25s,border-color .25s;
+  position:relative;overflow:hidden;
+}
+.level-card::before{
+  content:'';position:absolute;inset:0;
+  background:var(--lc,#7c3aed);
+  opacity:0;transition:opacity .25s;
+  border-radius:inherit;
+}
+.level-card:not(.locked):hover{
+  transform:translateY(-6px) scale(1.02);
+  border-color:var(--lc,#7c3aed);
+  box-shadow:0 14px 50px rgba(0,0,0,.4);
+}
+.level-card:not(.locked):hover::before{opacity:.07}
+.level-card.locked{opacity:.38;cursor:not-allowed}
+.level-card.done{border-color:#10b981}
+
+.lv-icon{font-size:2.6em;margin-bottom:10px;display:block;position:relative}
+.lv-name{font-weight:700;font-size:.95em;position:relative}
+.lv-desc{font-size:.78em;color:#7070a0;margin-top:5px;position:relative}
+.lv-stars{font-size:1.3em;margin-top:10px;position:relative;letter-spacing:2px}
+
+/* ══════════════════════════════════════
+   GAME SCREEN
+══════════════════════════════════════ */
+#screen-game{padding:14px 14px;gap:14px}
+
+.game-topbar{
+  width:100%;max-width:680px;
+  display:flex;align-items:center;gap:12px;
+}
+.back-btn{
+  width:42px;height:42px;border-radius:50%;
+  background:rgba(255,255,255,.08);border:none;color:#fff;
+  font-size:1.2em;cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .2s;
+}
+.back-btn:hover{background:rgba(255,255,255,.18)}
+
+.prog-outer{
+  flex:1;background:rgba(255,255,255,.08);
+  border-radius:50px;height:11px;overflow:hidden;
+}
+.prog-inner{
+  height:100%;
+  background:linear-gradient(90deg,#7c3aed,#a78bfa);
+  border-radius:50px;
+  transition:width .5s cubic-bezier(.34,1.56,.64,1);
+}
+
+.q-count{font-size:.88em;color:#7070a0;flex-shrink:0;min-width:42px;text-align:right}
+
+.streak-badge{
+  background:rgba(251,191,36,.15);
+  border:1px solid rgba(251,191,36,.3);
+  border-radius:50px;padding:6px 14px;
+  font-size:.88em;color:#fbbf24;font-weight:700;
+  flex-shrink:0;display:none;
+}
+.streak-badge.show{display:block}
+
+/* ── CARD ── */
+.game-card{
+  width:100%;max-width:680px;
+  background:var(--card);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:26px;padding:28px 24px;
+  text-align:center;
+}
+
+.q-text{
+  font-size:clamp(1.1em,3.5vw,1.45em);
+  font-weight:700;color:#dde;margin-bottom:22px;
+}
+
+/* ── FRACTION VISUAL ── */
+.frac-display{
+  display:flex;justify-content:center;align-items:center;
+  gap:24px;margin:16px 0;flex-wrap:wrap;
+}
+
+.frac-notation{
+  display:inline-flex;flex-direction:column;align-items:center;
+  font-size:2.2em;font-weight:900;color:#fbbf24;
+  line-height:1;
+}
+.frac-notation .num{
+  border-bottom:3px solid currentColor;
+  padding-bottom:4px;min-width:40px;text-align:center;
+}
+.frac-notation .den{padding-top:4px;min-width:40px;text-align:center}
+
+/* ── OPTIONS ── */
+.opts{
+  display:grid;gap:11px;margin-top:18px;
+}
+.opts.g2{grid-template-columns:1fr 1fr}
+.opts.g1{grid-template-columns:1fr;max-width:300px;margin-inline:auto}
+
+.opt-btn{
+  padding:13px 10px;
+  border:2px solid rgba(255,255,255,.12);
+  border-radius:16px;
+  background:rgba(255,255,255,.04);
+  color:#e8e8f8;font-size:1.05em;font-weight:600;
+  cursor:pointer;transition:all .18s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  min-height:60px;
+}
+.opt-btn:hover:not(:disabled){
+  border-color:#a78bfa;
+  background:rgba(167,139,250,.15);
+  transform:scale(1.03);
+}
+.opt-btn.correct{
+  border-color:#10b981;background:rgba(16,185,129,.18);
+  animation:pulse-ok .45s ease;
+}
+.opt-btn.wrong{
+  border-color:#f87171;background:rgba(248,113,113,.18);
+  animation:shake-x .4s ease;
+}
+@keyframes pulse-ok{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
+@keyframes shake-x{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+
+/* ── EXPLANATION ── */
+.expl{
+  display:none;
+  margin-top:16px;
+  background:rgba(124,58,237,.12);
+  border:1.5px solid rgba(124,58,237,.35);
+  border-radius:14px;padding:16px;
+  font-size:.95em;color:#c4b5fd;line-height:1.65;
+  text-align:left;
+}
+.expl.show{display:block;animation:fadeIn .3s ease}
+
+.expl .label{
+  font-size:.8em;text-transform:uppercase;letter-spacing:.08em;
+  color:#7c3aed;font-weight:700;margin-bottom:6px;
+}
+
+.cont-btn{
+  display:none;margin:14px auto 0;
+  padding:13px 34px;
+  background:linear-gradient(135deg,#10b981,#34d399);
+  border:none;border-radius:50px;color:#fff;
+  font-size:1.05em;font-weight:700;cursor:pointer;
+  transition:transform .18s,box-shadow .18s;
+}
+.cont-btn.show{display:block;animation:fadeIn .3s ease}
+.cont-btn:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(16,185,129,.4)}
+
+/* ── COMPARE LAYOUT ── */
+.cmp-area{
+  display:flex;align-items:center;justify-content:center;
+  gap:16px;margin:16px 0;flex-wrap:wrap;
+}
+.cmp-side{
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+}
+.cmp-vs{font-size:1.6em;font-weight:900;color:#4040608}
+.cmp-pick-btn{
+  padding:11px 26px;
+  border:2px solid rgba(255,255,255,.14);
+  border-radius:50px;
+  background:rgba(255,255,255,.05);
+  color:#e8e8f8;font-weight:700;font-size:1em;
+  cursor:pointer;transition:all .18s;
+}
+.cmp-pick-btn:hover:not(:disabled){
+  border-color:#fbbf24;background:rgba(251,191,36,.15);
+  transform:scale(1.05);
+}
+
+/* ══════════════════════════════════════
+   RESULT SCREEN
+══════════════════════════════════════ */
+#screen-result{
+  justify-content:center;gap:20px;text-align:center;
+}
+
+.res-emoji{
+  font-size:5.5em;
+  animation:pop-in .5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes pop-in{from{transform:scale(0) rotate(-20deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+
+.res-title{
+  font-size:clamp(2em,7vw,3em);
+  font-weight:900;color:#fbbf24;
+}
+
+.res-stars{
+  display:flex;gap:8px;justify-content:center;font-size:3em;
+}
+.res-star{
+  animation:star-pop .35s cubic-bezier(.34,1.56,.64,1) both;
+}
+.res-star:nth-child(2){animation-delay:.15s}
+.res-star:nth-child(3){animation-delay:.3s}
+@keyframes star-pop{from{transform:scale(0) rotate(30deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+
+.res-score{font-size:1.2em;color:#8080aa}
+.res-xp{font-size:1.4em;color:#10b981;font-weight:700}
+
+.res-btns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+
+/* ══════════════════════════════════════
+   INTRO SCREEN
+══════════════════════════════════════ */
+#screen-intro{justify-content:center;gap:22px;text-align:center;max-width:640px;margin:auto}
+.intro-icon{font-size:4em;animation:float 2.5s ease-in-out infinite alternate}
+.intro-title{font-size:1.9em;font-weight:800;color:#c4b5fd}
+.intro-desc{
+  background:var(--card2);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;padding:22px;
+  font-size:1em;color:#9090c0;line-height:1.75;text-align:left;
+  max-width:480px;width:100%;
+}
+.intro-desc h3{color:#a78bfa;margin-bottom:10px;font-size:1.1em}
+.intro-btns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+
+/* ══════════════════════════════════════
+   PARTICLES
+══════════════════════════════════════ */
+.prt{
+  position:fixed;pointer-events:none;z-index:9999;
+  border-radius:50%;
+  animation:prt-fly var(--dur,1s) ease-out forwards;
+}
+@keyframes prt-fly{
+  0%{transform:translate(0,0) scale(1);opacity:1}
+  100%{transform:translate(var(--tx,0),var(--ty,-80px)) scale(0);opacity:0}
+}
+
+/* ══════════════════════════════════════
+   MISC
+══════════════════════════════════════ */
+.divider{width:100%;max-width:680px;height:1px;background:rgba(255,255,255,.06)}
+
+@media(max-width:440px){
+  .game-card{padding:18px 12px}
+  .level-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- ═══════════ START ═══════════ -->
+<div id="screen-start" class="screen active">
+  <div>
+    <div class="hero-emoji">🍕</div>
+    <div class="hero-title">Страна Дробей</div>
+    <div class="hero-sub">Игровой учебник математики</div>
+  </div>
+
+  <div class="start-stats">
+    <div class="stat-chip">🏆 <span id="s-xp">0</span> XP</div>
+    <div class="stat-chip">⭐ <span id="s-stars">0</span>/15 звёзд</div>
+  </div>
+
+  <div class="xp-bar-wrap" style="max-width:340px;width:100%">
+    <div class="xp-bar-fill" id="s-xp-bar" style="width:0%"></div>
+  </div>
+
+  <button class="btn btn-primary" onclick="showMap()">🚀 Начать приключение</button>
+
+  <div class="intro-desc" style="max-width:420px">
+    <h3>🎮 Как играть?</h3>
+    <p>5 уровней, каждый посвящён новой теме. Решай задачи, зарабатывай звёзды ⭐ и XP.
+    Правильный ответ — частицы летят! Используй подсказки, если застрял.</p>
+  </div>
+</div>
+
+<!-- ═══════════ MAP ═══════════ -->
+<div id="screen-map" class="screen">
+  <div class="map-header">
+    <div class="map-title">🗺️ Карта уровней</div>
+    <div class="map-sub">Прокачай все 5 тем и стань мастером дробей</div>
+  </div>
+
+  <div class="map-total-stars" id="map-total-stars">
+    ⭐ 0 / 15 звёзд собрано
+  </div>
+
+  <div class="level-grid" id="level-grid"></div>
+
+  <button class="btn btn-ghost" onclick="showScreen('start')">← На главную</button>
+</div>
+
+<!-- ═══════════ INTRO ═══════════ -->
+<div id="screen-intro" class="screen">
+  <div class="intro-icon" id="intro-icon">🍕</div>
+  <div class="intro-title" id="intro-title">Название уровня</div>
+  <div class="intro-desc" id="intro-body"></div>
+  <div class="intro-btns">
+    <button class="btn btn-primary" id="intro-start-btn" onclick="">▶ Поехали!</button>
+    <button class="btn btn-ghost" onclick="showMap()">← Карта</button>
+  </div>
+</div>
+
+<!-- ═══════════ GAME ═══════════ -->
+<div id="screen-game" class="screen">
+  <div class="game-topbar">
+    <button class="back-btn" onclick="showMap()">←</button>
+    <div class="prog-outer">
+      <div class="prog-inner" id="g-prog" style="width:0%"></div>
+    </div>
+    <div class="streak-badge" id="g-streak">🔥 0</div>
+    <div class="q-count" id="g-count">1/5</div>
+  </div>
+
+  <div class="game-card" id="game-card"></div>
+</div>
+
+<!-- ═══════════ RESULT ═══════════ -->
+<div id="screen-result" class="screen">
+  <div class="res-emoji" id="r-emoji">🎉</div>
+  <div class="res-title" id="r-title">Отлично!</div>
+  <div class="res-stars" id="r-stars"></div>
+  <div class="res-score" id="r-score"></div>
+  <div class="res-xp" id="r-xp"></div>
+  <div class="res-btns">
+    <button class="btn btn-primary" id="r-next-btn">Дальше 🚀</button>
+    <button class="btn btn-ghost" onclick="retryLevel()">Повторить 🔄</button>
+    <button class="btn btn-ghost" onclick="showMap()">Карта 🗺️</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════
+   BACKGROUND STARS
+═══════════════════════════════════ */
+const bgCvs = document.getElementById('bg-canvas');
+const bgCtx = bgCvs.getContext('2d');
+let stars = [];
+
+function initBg(){
+  bgCvs.width = innerWidth; bgCvs.height = innerHeight;
+  stars = Array.from({length:100}, () => ({
+    x: Math.random()*innerWidth,
+    y: Math.random()*innerHeight,
+    r: Math.random()*1.4+.3,
+    v: Math.random()*.25+.05,
+    o: Math.random()*.5+.1,
+    tw: Math.random()*2000,
+  }));
+}
+function drawBg(){
+  bgCtx.clearRect(0,0,bgCvs.width,bgCvs.height);
+  const t = Date.now();
+  stars.forEach(s=>{
+    const pulse = .7 + .3*Math.sin((t+s.tw)/900);
+    bgCtx.beginPath();
+    bgCtx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    bgCtx.fillStyle = `rgba(180,160,255,${s.o*pulse})`;
+    bgCtx.fill();
+    s.y += s.v;
+    if(s.y > bgCvs.height){ s.y=0; s.x=Math.random()*bgCvs.width; }
+  });
+  requestAnimationFrame(drawBg);
+}
+window.addEventListener('resize', initBg);
+initBg(); drawBg();
+
+/* ═══════════════════════════════════
+   SVG HELPERS
+═══════════════════════════════════ */
+function pieSVG(num, den, clr='#7c3aed', sz=110){
+  if(den<=0) return '';
+  const cx=sz/2, cy=sz/2, r=sz/2-5;
+  const TWO_PI = Math.PI*2;
+  const sliceA = TWO_PI / den;
+  let paths='';
+  for(let i=0;i<den;i++){
+    const a0 = -Math.PI/2 + i*sliceA;
+    const a1 = a0 + sliceA;
+    const x1=cx+r*Math.cos(a0), y1=cy+r*Math.sin(a0);
+    const x2=cx+r*Math.cos(a1), y2=cy+r*Math.sin(a1);
+    const large = sliceA > Math.PI ? 1 : 0;
+    const fill = i<num ? clr : 'rgba(255,255,255,.05)';
+    paths += `<path d="M${cx},${cy}L${x1},${y1}A${r},${r},0,${large},1,${x2},${y2}Z"
+      fill="${fill}" stroke="rgba(255,255,255,.18)" stroke-width="2"/>`;
+  }
+  return `<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" style="flex-shrink:0">
+    ${paths}
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="2"/>
+  </svg>`;
+}
+
+function barSVG(num, den, clr='#7c3aed', w=220, h=46){
+  const sw = w/den;
+  let rects='';
+  for(let i=0;i<den;i++){
+    const fill = i<num ? clr : 'rgba(255,255,255,.05)';
+    rects += `<rect x="${i*sw+1}" y="1" width="${sw-3}" height="${h-2}"
+      rx="5" fill="${fill}" stroke="rgba(255,255,255,.15)" stroke-width="1.5"/>`;
+  }
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="flex-shrink:0">${rects}</svg>`;
+}
+
+function fracHTML(n,d,clr='#fbbf24',sz='2em'){
+  return `<span class="frac-notation" style="color:${clr};font-size:${sz}">
+    <span class="num">${n}</span><span class="den">${d}</span>
+  </span>`;
+}
+
+/* ═══════════════════════════════════
+   GAME STATE
+═══════════════════════════════════ */
+const G = {
+  xp: 0,
+  levelStars: [0,0,0,0,0],
+  cur: 0,      // current level index
+  qIdx: 0,
+  correct: 0,
+  streak: 0,
+  qs: [],
+  answered: false,
+};
+
+/* ═══════════════════════════════════
+   LEVELS CONFIG
+═══════════════════════════════════ */
+const LEVELS = [
+  {
+    id:0, title:'Что такое дробь?', icon:'🍕',
+    color:'#7c3aed',
+    intro:{
+      h:'🍕 Делим пиццу!',
+      body:`Дробь показывает, <strong>какую часть</strong> чего-то мы взяли.<br><br>
+        Например, если пицца разрезана на <strong>4</strong> куска, а ты взял <strong>1</strong> — это <strong>¼</strong>.<br><br>
+        Верхнее число называется <em>числителем</em> (сколько взяли),<br>
+        нижнее — <em>знаменателем</em> (на сколько поделили).`
+    },
+    gen: genLevel0
+  },
+  {
+    id:1, title:'Числитель и знаменатель', icon:'🍫',
+    color:'#ec4899',
+    intro:{
+      h:'🍫 Шоколадная плитка',
+      body:`В записи дроби два числа:<br><br>
+        <strong>Числитель</strong> — наверху. Сколько частей <em>взяли</em>.<br>
+        <strong>Знаменатель</strong> — внизу. На сколько <em>поделили</em> целое.<br><br>
+        В дроби ³⁄₅ числитель = 3, знаменатель = 5.<br>
+        Попробуй определить их в задачах!`
+    },
+    gen: genLevel1
+  },
+  {
+    id:2, title:'Сравниваем дроби', icon:'⚖️',
+    color:'#f59e0b',
+    intro:{
+      h:'⚖️ Чья порция больше?',
+      body:`Чтобы сравнивать дроби, смотри на рисунок.<br><br>
+        Если знаменатели <strong>одинаковые</strong> — больший числитель = большая дробь.<br>
+        Например: ³⁄₅ > ¹⁄₅.<br><br>
+        Если знаменатели разные — сравни закрашенные части на рисунке.<br>
+        Например: ½ > ⅓, потому что половина больше трети.`
+    },
+    gen: genLevel2
+  },
+  {
+    id:3, title:'Равные дроби', icon:'🔮',
+    color:'#10b981',
+    intro:{
+      h:'🔮 Магия равных долей',
+      body:`Разные дроби могут означать <strong>одно и то же</strong>!<br><br>
+        ½ = ²⁄₄ = ³⁄₆ — всё это половина целого.<br><br>
+        Чтобы получить равную дробь — умножь (или раздели) <em>числитель и знаменатель</em> на одно и то же число:<br>
+        ½ × ²⁄₂ = ²⁄₄.`
+    },
+    gen: genLevel3
+  },
+  {
+    id:4, title:'Складываем дроби', icon:'🚀',
+    color:'#f97316',
+    intro:{
+      h:'🚀 Складываем кусочки',
+      body:`Если знаменатели <strong>одинаковые</strong> — сложить просто:<br><br>
+        Числители складываем, знаменатель оставляем:<br>
+        ¹⁄₄ + ²⁄₄ = ³⁄₄.<br><br>
+        Представь: 1 кусочек + 2 кусочка из той же пиццы = 3 кусочка!`
+    },
+    gen: genLevel4
+  },
+];
+
+/* ═══════════════════════════════════
+   QUESTION GENERATORS
+═══════════════════════════════════ */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=0|Math.random()*(i+1);[a[i],a[j]]=[a[j],a[i]]}return a }
+
+const FRACS = [[1,2],[1,3],[1,4],[2,3],[3,4],[1,6],[5,6],[3,8],[1,8],[2,5],[3,5],[4,5]];
+
+function wrongFracs(n,d,count=3){
+  const pool = FRACS.filter(([fn,fd])=> fn!==n||fd!==d);
+  shuffle(pool);
+  return pool.slice(0,count);
+}
+
+// Level 0 — name the fraction shown as pie
+function genLevel0(){
+  const pool = shuffle([...FRACS]).slice(0,5);
+  return pool.map(([n,d])=>{
+    const opts = [[n,d],...wrongFracs(n,d,3)];
+    shuffle(opts);
+    return {
+      type:'choice',
+      q:'Какая дробь изображена на пицце? 🍕',
+      vis: pieSVG(n,d,'#ec4899',130),
+      opts: opts.map(([fn,fd])=>({
+        html: fracHTML(fn,fd),
+        ok: fn===n&&fd===d,
+      })),
+      expl:`На пицце закрашено <strong>${n}</strong> из <strong>${d}</strong> кусочков — это дробь <strong>${n}/${d}</strong>.<br>
+        Числитель (сколько взяли) = ${n}, знаменатель (на сколько делили) = ${d}.`
+    };
+  });
+}
+
+// Level 1 — identify numerator or denominator
+function genLevel1(){
+  const pool = shuffle([...FRACS]).slice(0,5);
+  return pool.map(([n,d],i)=>{
+    const askNum = i%2===0;
+    const answer = askNum ? n : d;
+    const label = askNum ? 'числитель' : 'знаменатель';
+    const wrongs = new Set([answer]);
+    const pool2=[];
+    while(pool2.length<3){ const w=1+0|Math.random()*9; if(!wrongs.has(w)){wrongs.add(w);pool2.push(w)} }
+    const opts = shuffle([answer,...pool2]);
+    return {
+      type:'choice',
+      q:`Что такое <em>${label}</em> этой дроби?`,
+      vis: `<div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+        ${pieSVG(n,d,'#ec4899',110)}
+        ${fracHTML(n,d,'#fbbf24','2.4em')}
+      </div>`,
+      opts: opts.map(v=>({
+        html:`<span style="font-size:1.6em;font-weight:900">${v}</span>`,
+        ok: v===answer,
+      })),
+      expl:`В дроби <strong>${n}/${d}</strong>: числитель = <strong>${n}</strong>, знаменатель = <strong>${d}</strong>.<br>
+        ${askNum?`Числитель стоит <em>вверху</em> и показывает, сколько частей взяли.`
+                 :`Знаменатель стоит <em>внизу</em> и показывает, на сколько делили целое.`}`
+    };
+  });
+}
+
+// Level 2 — compare, click bigger
+function genLevel2(){
+  return [
+    [[1,2],[1,3],'1/2'],
+    [[3,4],[1,4],'3/4'],
+    [[1,3],[2,3],'2/3'],
+    [[2,5],[3,5],'3/5'],
+    [[3,8],[5,8],'5/8'],
+  ].map(([f1,f2,ans])=>({
+    type:'compare',
+    q:'Какая дробь <strong>БОЛЬШЕ</strong>? Нажми на неё! ⚖️',
+    f1, f2, ans,
+    expl:`${f1[0]}/${f1[1]} ${ans===`${f1[0]}/${f1[1]}`?'>':'<'} ${f2[0]}/${f2[1]}.<br>
+      ${f1[1]===f2[1]
+        ? `Знаменатели одинаковые (${f1[1]}), поэтому смотрим на числители: ${Math.max(f1[0],f2[0])} > ${Math.min(f1[0],f2[0])}.`
+        : `Смотри на закрашенные части рисунка — ${ans} занимает больше места.`}`
+  }));
+}
+
+// Level 3 — find equivalent
+function genLevel3(){
+  const sets = [
+    {base:[1,2], eq:[2,4], oth:[[1,3],[3,4],[2,5]]},
+    {base:[1,3], eq:[2,6], oth:[[1,2],[3,4],[2,5]]},
+    {base:[3,4], eq:[6,8], oth:[[2,3],[1,2],[3,5]]},
+    {base:[2,3], eq:[4,6], oth:[[1,3],[3,4],[1,2]]},
+    {base:[1,4], eq:[2,8], oth:[[1,3],[3,4],[2,6]]},
+  ];
+  return sets.map(({base,eq,oth})=>{
+    const opts = shuffle([[...eq],...oth.map(o=>[...o])]);
+    return {
+      type:'choice',
+      q:`Найди дробь, равную ${base[0]}/${base[1]} 🔮`,
+      vis:`<div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+        ${pieSVG(base[0],base[1],'#10b981',120)}
+        ${fracHTML(base[0],base[1],'#10b981','2.2em')}
+      </div>`,
+      opts: opts.map(([fn,fd])=>({
+        html:`<div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          ${pieSVG(fn,fd,'#f59e0b',65)}
+          ${fracHTML(fn,fd,'#fbbf24','1.3em')}
+        </div>`,
+        ok: fn===eq[0]&&fd===eq[1],
+      })),
+      expl:`${base[0]}/${base[1]} = ${eq[0]}/${eq[1]}, потому что мы умножили числитель и знаменатель на одно число (${eq[1]/base[1]}).<br>
+        Закрашенная область обеих дробей одинакова — они равны!`
+    };
+  });
+}
+
+// Level 4 — add fractions same denom
+function genLevel4(){
+  return [
+    [[1,4],[2,4],[3,4]],
+    [[1,3],[1,3],[2,3]],
+    [[2,8],[3,8],[5,8]],
+    [[1,5],[3,5],[4,5]],
+    [[3,10],[4,10],[7,10]],
+  ].map(([f1,f2,res])=>{
+    const d=res[1];
+    const used=new Set([`${res[0]}`]);
+    const wrongs=[];
+    while(wrongs.length<3){const w=1+Math.floor(Math.random()*(d+3));if(!used.has(`${w}`)){used.add(`${w}`);wrongs.push([w,d])}}
+    const opts=shuffle([[...res],...wrongs]);
+    return {
+      type:'choice',
+      q:`Сколько будет ${f1[0]}/${f1[1]} + ${f2[0]}/${f2[1]}? 🚀`,
+      vis:`<div style="display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap">
+        ${pieSVG(f1[0],f1[1],'#7c3aed',90)}
+        <span style="font-size:2.2em;font-weight:900;color:#a78bfa">+</span>
+        ${pieSVG(f2[0],f2[1],'#ec4899',90)}
+        <span style="font-size:2.2em;font-weight:900;color:#a78bfa">=</span>
+        <span style="font-size:2.2em;font-weight:900;color:#fbbf24">?</span>
+      </div>`,
+      opts: opts.map(([fn,fd])=>({
+        html: fracHTML(fn,fd,'#fbbf24'),
+        ok: fn===res[0]&&fd===res[1],
+      })),
+      expl:`${f1[0]}/${f1[1]} + ${f2[0]}/${f2[1]} = ${res[0]}/${res[1]}.<br>
+        Знаменатели одинаковые (${d}), поэтому складываем только числители: ${f1[0]} + ${f2[0]} = ${res[0]}.<br>
+        Знаменатель (${d}) остаётся неизменным!`
+    };
+  });
+}
+
+/* ═══════════════════════════════════
+   SCREEN / LEVEL MANAGEMENT
+═══════════════════════════════════ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+
+function showMap(){
+  // Update map
+  const grid = document.getElementById('level-grid');
+  grid.innerHTML = LEVELS.map((lv,i)=>{
+    const st = G.levelStars[i];
+    const locked = i>0 && G.levelStars[i-1]===0;
+    const done = st>0;
+    const starStr = '★'.repeat(st)+'☆'.repeat(3-st);
+    return `<div class="level-card ${locked?'locked':''} ${done?'done':''}"
+      style="--lc:${lv.color}"
+      onclick="${locked?'':'openLevel('+i+')'}">
+      <span class="lv-icon">${locked?'🔒':lv.icon}</span>
+      <div class="lv-name">${lv.title}</div>
+      <div class="lv-desc">${locked?'Сначала пройди предыдущий уровень':lv.intro.h.replace(/[^\w\s]/g,'')}</div>
+      <div class="lv-stars" style="color:${lv.color}">${starStr}</div>
+    </div>`;
+  }).join('');
+
+  const total = G.levelStars.reduce((a,b)=>a+b,0);
+  document.getElementById('map-total-stars').textContent = `⭐ ${total} / 15 звёзд собрано`;
+
+  updateStartStats();
+  showScreen('map');
+}
+
+function openLevel(idx){
+  G.cur = idx;
+  const lv = LEVELS[idx];
+  document.getElementById('intro-icon').textContent = lv.icon;
+  document.getElementById('intro-title').textContent = lv.title;
+  document.getElementById('intro-body').innerHTML = `<h3>${lv.intro.h}</h3><p style="margin-top:10px">${lv.intro.body}</p>`;
+  document.getElementById('intro-start-btn').onclick = ()=>startLevel(idx);
+  showScreen('intro');
+}
+
+function startLevel(idx){
+  G.cur = idx;
+  G.qIdx = 0;
+  G.correct = 0;
+  G.streak = 0;
+  G.qs = LEVELS[idx].gen();
+  G.answered = false;
+  showScreen('game');
+  renderQ();
+}
+
+/* ═══════════════════════════════════
+   RENDER QUESTION
+═══════════════════════════════════ */
+function renderQ(){
+  const q = G.qs[G.qIdx];
+  const total = G.qs.length;
+  G.answered = false;
+
+  document.getElementById('g-prog').style.width = (G.qIdx/total*100)+'%';
+  document.getElementById('g-count').textContent = `${G.qIdx+1}/${total}`;
+
+  const sb = document.getElementById('g-streak');
+  if(G.streak>=2){ sb.textContent=`🔥 ${G.streak}`; sb.classList.add('show'); }
+  else sb.classList.remove('show');
+
+  if(q.type==='compare') renderCompareQ(q);
+  else renderChoiceQ(q);
+}
+
+function renderChoiceQ(q){
+  const card = document.getElementById('game-card');
+  card.innerHTML = `
+    <div class="q-text">${q.q}</div>
+    <div class="frac-display">${q.vis||''}</div>
+    <div class="opts g2" id="opts">
+      ${q.opts.map((o,i)=>`
+        <button class="opt-btn" onclick="pickChoice(${i})">${o.html}</button>
+      `).join('')}
+    </div>
+    <div class="expl" id="expl"><div class="label">💡 Объяснение</div>${q.expl}</div>
+    <button class="cont-btn" id="cont-btn" onclick="nextQ()">Продолжить →</button>
+  `;
+}
+
+function renderCompareQ(q){
+  const card = document.getElementById('game-card');
+  const [n1,d1]=q.f1, [n2,d2]=q.f2;
+  const lv = LEVELS[G.cur];
+  card.innerHTML = `
+    <div class="q-text">${q.q}</div>
+    <div class="cmp-area">
+      <div class="cmp-side">
+        ${pieSVG(n1,d1,lv.color,115)}
+        ${fracHTML(n1,d1,lv.color,'1.8em')}
+        <button class="cmp-pick-btn opt-btn" id="cb0" onclick="pickCompare('${n1}/${d1}',0)">
+          Выбрать ${n1}/${d1}
+        </button>
+      </div>
+      <span style="font-size:1.8em;font-weight:900;color:#333366;padding-top:20px">VS</span>
+      <div class="cmp-side">
+        ${pieSVG(n2,d2,'#ec4899',115)}
+        ${fracHTML(n2,d2,'#ec4899','1.8em')}
+        <button class="cmp-pick-btn opt-btn" id="cb1" onclick="pickCompare('${n2}/${d2}',1)">
+          Выбрать ${n2}/${d2}
+        </button>
+      </div>
+    </div>
+    <div class="expl" id="expl"><div class="label">💡 Объяснение</div>${q.expl}</div>
+    <button class="cont-btn" id="cont-btn" onclick="nextQ()">Продолжить →</button>
+  `;
+}
+
+/* ═══════════════════════════════════
+   ANSWER HANDLING
+═══════════════════════════════════ */
+function pickChoice(i){
+  if(G.answered) return;
+  G.answered = true;
+  const q = G.qs[G.qIdx];
+  const btns = document.querySelectorAll('#opts .opt-btn');
+  btns.forEach(b=>b.disabled=true);
+  const ok = q.opts[i].ok;
+  q.opts.forEach((o,j)=>{ if(o.ok) btns[j].classList.add('correct'); });
+  if(ok){
+    btns[i].classList.add('correct');
+    G.correct++; G.streak++;
+    spawnParticles(btns[i]);
+    playOk();
+  } else {
+    btns[i].classList.add('wrong');
+    G.streak=0;
+    playErr();
+  }
+  showExpl();
+}
+
+function pickCompare(ans, btnIdx){
+  if(G.answered) return;
+  G.answered = true;
+  const q = G.qs[G.qIdx];
+  const b0=document.getElementById('cb0'), b1=document.getElementById('cb1');
+  b0.disabled=b1.disabled=true;
+  const ok = ans===q.ans;
+  const correctBtn = q.ans===`${q.f1[0]}/${q.f1[1]}` ? b0 : b1;
+  correctBtn.classList.add('correct');
+  if(ok){
+    G.correct++; G.streak++;
+    spawnParticles(btnIdx===0?b0:b1);
+    playOk();
+  } else {
+    (btnIdx===0?b0:b1).classList.add('wrong');
+    G.streak=0;
+    playErr();
+  }
+  showExpl();
+}
+
+function showExpl(){
+  document.getElementById('expl').classList.add('show');
+  document.getElementById('cont-btn').classList.add('show');
+}
+
+function nextQ(){
+  G.qIdx++;
+  if(G.qIdx >= G.qs.length) showResult();
+  else renderQ();
+}
+
+/* ═══════════════════════════════════
+   RESULT
+═══════════════════════════════════ */
+function showResult(){
+  const c=G.correct, t=G.qs.length;
+  const st = c>=5?3:c>=3?2:c>=1?1:0;
+  const xp = st*60 + c*15;
+
+  G.levelStars[G.cur] = Math.max(G.levelStars[G.cur], st);
+  G.xp += xp;
+
+  const msgs = ['Не унывай, попробуй ещё раз!','Неплохо!','Хорошо!','Великолепно!'];
+  const emojis = ['😔','🙂','😊','🎉'];
+
+  document.getElementById('r-emoji').textContent = emojis[st];
+  document.getElementById('r-title').textContent = msgs[st];
+  document.getElementById('r-stars').innerHTML =
+    [0,1,2].map(i=>`<span class="res-star" style="opacity:${i<st?1:.18}">⭐</span>`).join('');
+  document.getElementById('r-score').textContent = `${c} из ${t} правильно`;
+  document.getElementById('r-xp').textContent = `+${xp} XP 💫`;
+
+  const nextBtn = document.getElementById('r-next-btn');
+  const hasNext = G.cur < LEVELS.length-1;
+  if(hasNext && st>0){
+    nextBtn.textContent = `${LEVELS[G.cur+1].icon} Следующий уровень`;
+    nextBtn.onclick = ()=>openLevel(G.cur+1);
+  } else if(!hasNext){
+    nextBtn.textContent = '🏆 Ты прошёл всё!';
+    nextBtn.onclick = showMap;
+  } else {
+    nextBtn.textContent = '🔄 Ещё раз';
+    nextBtn.onclick = retryLevel;
+  }
+
+  updateStartStats();
+  showScreen('result');
+  if(st===3) setTimeout(bigCelebration, 400);
+}
+
+function retryLevel(){ startLevel(G.cur); }
+
+function updateStartStats(){
+  const pct = Math.min(100, G.xp/500*100);
+  document.getElementById('s-xp-bar').style.width = pct+'%';
+  document.getElementById('s-xp').textContent = G.xp;
+  document.getElementById('s-stars').textContent = G.levelStars.reduce((a,b)=>a+b,0);
+}
+
+/* ═══════════════════════════════════
+   PARTICLES
+═══════════════════════════════════ */
+const COLORS=['#a78bfa','#f472b6','#fbbf24','#34d399','#fb923c','#60a5fa','#fff'];
+function spawnParticles(el, count=22){
+  const r=el.getBoundingClientRect();
+  const cx=r.left+r.width/2, cy=r.top+r.height/2;
+  for(let i=0;i<count;i++){
+    const p=document.createElement('div');
+    p.className='prt';
+    const sz=Math.random()*10+4;
+    const ang=Math.random()*Math.PI*2;
+    const dist=Math.random()*130+40;
+    const dur=(Math.random()*.5+.5)+'s';
+    Object.assign(p.style,{
+      left:cx+'px', top:cy+'px',
+      width:sz+'px', height:sz+'px',
+      background:COLORS[0|Math.random()*COLORS.length],
+      '--tx':Math.cos(ang)*dist+'px',
+      '--ty':Math.sin(ang)*dist+'px',
+      '--dur':dur,
+    });
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(), parseFloat(dur)*1000+100);
+  }
+}
+
+function bigCelebration(){
+  [[.25,.5],[.75,.5],[.5,.25],[.5,.75]].forEach(([rx,ry],i)=>{
+    setTimeout(()=>{
+      const fake={getBoundingClientRect:()=>({
+        left:innerWidth*rx,top:innerHeight*ry,width:0,height:0
+      })};
+      spawnParticles(fake,30);
+    },i*200);
+  });
+}
+
+/* ═══════════════════════════════════
+   AUDIO
+═══════════════════════════════════ */
+let actx;
+function getACtx(){ if(!actx) actx=new(window.AudioContext||window.webkitAudioContext)(); return actx; }
+function tone(freq,dur,type='sine',gain=.28){
+  try{
+    const c=getACtx();
+    const o=c.createOscillator(), g=c.createGain();
+    o.connect(g); g.connect(c.destination);
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(gain,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,c.currentTime+dur);
+    o.start(c.currentTime); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function playOk(){
+  tone(523,.08); setTimeout(()=>tone(659,.08),90); setTimeout(()=>tone(784,.14),180);
+}
+function playErr(){
+  tone(300,.12,'sawtooth',.2); setTimeout(()=>tone(240,.18,'sawtooth',.2),130);
+}
+
+/* ═══════════════════════════════════
+   INIT
+═══════════════════════════════════ */
+showScreen('start');
+</script>
+</body>
+</html>
